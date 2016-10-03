@@ -14,8 +14,9 @@ api = twitter.Api(consumer_key=config['Twitter']['ConsumerKey'],
         access_token_key=config['Twitter']['AccessTokenKey'],
         access_token_secret=config['Twitter']['AccessTokenSecret'])
 
-movie_api = "http://data.tmsapi.com/v1.1/movies/showings?startDate=2016-10-02&numDays=1&zip={zip}&api_key={key}".format(
-        zip=config['Boop']['ZipCode'],
+movie_api = "http://data.tmsapi.com/v1.1/movies/showings?startDate={date}&numDays=1&zip={zipcode}&api_key={key}".format(
+        date=arrow.now().format('YYYY-MM-DD'),
+        zipcode=config['Boop']['ZipCode'],
         key=config['OnConnect']['ApiKey']
     )
 
