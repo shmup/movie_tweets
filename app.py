@@ -9,22 +9,22 @@ import configparser
 config = configparser.ConfigParser()
 config.read('config')
 
-api = twitter.Api(consumer_key=config['Twitter']['ConsumerKey'],
-        consumer_secret=config['Twitter']['ConsumerSecret'],
-        access_token_key=config['Twitter']['AccessTokenKey'],
-        access_token_secret=config['Twitter']['AccessTokenSecret'])
+api = twitter.Api(consumer_key=config.get('Twitter', 'ConsumerKey'),
+        consumer_secret=config.get('Twitter', 'ConsumerSecret'),
+        access_token_key=config.get('Twitter', 'AccessTokenKey'),
+        access_token_secret=config.get('Twitter', 'AccessTokenSecret')
+    )
 
 movie_api = "http://data.tmsapi.com/v1.1/movies/showings?startDate={date}&numDays=1&zip={zipcode}&api_key={key}".format(
         date=arrow.now().format('YYYY-MM-DD'),
-        zipcode=config['Boop']['ZipCode'],
-        key=config['OnConnect']['ApiKey']
+        zipcode=config.get('Settings', 'ZipCode'),
+        key=config.get('OnConnect', 'ApiKey')
     )
 
-r = requests.get(movie_api)
-data = json.loads(r.content.decode('utf8'))
+THEATERS = json.loads(config.get('Settings', 'Theaters'))
 
-# the only theaters we care about in our result set
-theaters = ['State Theatre', 'Bijou by the Bay']
+# we'll store our movies here organized by theater
+MOVIES = {}
 
 # we just want hours and minutes for movie times
 def time_fmt(t): return arrow.get(t).format('h:mma')
@@ -43,20 +43,20 @@ def build_tweets(theater, movies):
     tweet = "{}\n\n".format(theater.upper())
 
     while len(movies) > 0:
-        if len(tweet) + len(movies[0]) <= 140:
-            # only if < 140 characters, add a movie/time to the tweet
+        # only add the tweet if tweet length is < 141
+        if len(tweet) + len(movies[0]) < 141:
             tweet += "{}\n\n".format(movies.pop(0))
         else:
+            # start a new tweet cause we would go over 140 characters
             if len(movies) > 0:
-                # start a new tweet cause we would go over 140 characters
                 build_tweets(theater, movies)
 
     fire(tweet)
     # api rates so we're extra safe
     time.sleep(2)
 
-state_movies = []
-bijou_movies = []
+r = requests.get(movie_api)
+data = json.loads(r.content.decode('utf8'))
 
 for movie in data:
     good_theater = False
@@ -65,7 +65,7 @@ for movie in data:
 
     # determine if movie is playing at state or bijou
     for showing in showtimes:
-        if showing['theatre']['name'] in theaters:
+        if showing['theatre']['name'] in THEATERS:
             times += "{}, ".format(time_fmt(showing['dateTime']))
             good_theater = True
 
@@ -81,10 +81,11 @@ for movie in data:
     # combine the title and showtimes
     m = title_and_time_fmt(title, times)
 
-    if theater == 'State Theatre':
-        state_movies.append(m)
-    else:
-        bijou_movies.append(m)
+    # make sure we can store movies
+    if theater not in MOVIES:
+        MOVIES[theater] = []
 
-build_tweets('Bijou by the Bay', bijou_movies)
-build_tweets('State Theater', state_movies)
+    MOVIES[theater].append(m)
+
+for theater in THEATERS:
+    build_tweets(theater, MOVIES[theater])

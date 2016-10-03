@@ -1,5 +1,6 @@
-[Boop]
+[Settings]
 ZipCode = 00000
+Theaters = ["Change", "Me"]
 
 [Twitter]
 ConsumerKey = ???
