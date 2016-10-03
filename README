@@ -1,0 +1,11 @@
+Spits out tweets for movies playing at whatever theaters you care about in whichever zipcode.
+
+Requires keys from:
+ - https://dev.twitter.com/
+ - http://developer.tmsapi.com/
+
+1. cp config.example config
+2. edit config appropriately
+3. python app.py
+
+example: https://twitter.com/traversetonight

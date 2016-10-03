@@ -1,0 +1,11 @@
+[Boop]
+ZipCode = 00000
+
+[Twitter]
+ConsumerKey = ???
+ConsumerSecret = ???
+AccessTokenKey = ???
+AccessTokenSecret = ???
+
+[OnConnect]
+ApiKey = ???
