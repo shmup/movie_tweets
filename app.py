@@ -2,39 +2,47 @@ import twitter
 import requests
 import json
 import arrow
-import sys
 import time
 import configparser
+import sys
+import os
 
-config = configparser.ConfigParser()
-config.read('config')
+PATH = os.path.abspath(os.path.dirname(sys.argv[0]))
+CONF_FILE = os.path.join(PATH, 'config')
+CONFIG = configparser.ConfigParser()
+CONFIG.read('config')
 
-api = twitter.Api(consumer_key=config.get('Twitter', 'ConsumerKey'),
-        consumer_secret=config.get('Twitter', 'ConsumerSecret'),
-        access_token_key=config.get('Twitter', 'AccessTokenKey'),
-        access_token_secret=config.get('Twitter', 'AccessTokenSecret')
-    )
+# grab the theaters we're interested in from the config
+THEATERS = json.loads(CONFIG.get('Settings', 'Theaters'))
 
-movie_api = "http://data.tmsapi.com/v1.1/movies/showings?startDate={date}&numDays=1&zip={zipcode}&api_key={key}".format(
-        date=arrow.now().format('YYYY-MM-DD'),
-        zipcode=config.get('Settings', 'ZipCode'),
-        key=config.get('OnConnect', 'ApiKey')
-    )
+api = twitter.Api(consumer_key=CONFIG.get('Twitter', 'ConsumerKey'),
+                  consumer_secret=CONFIG.get('Twitter', 'ConsumerSecret'),
+                  access_token_key=CONFIG.get('Twitter', 'AccessTokenKey'),
+                  access_token_secret=CONFIG.get('Twitter', 'AccessTokenSecret'))
 
-THEATERS = json.loads(config.get('Settings', 'Theaters'))
+movie_api = "http://data.tmsapi.com/v1.1/movies/showings?startDate={date}&numDays=1&zip={zipcode}"\
+        "&api_key={key}".format(
+            date=arrow.now().format('YYYY-MM-DD'),
+            zipcode=CONFIG.get('Settings', 'ZipCode'),
+            key=CONFIG.get('OnConnect', 'ApiKey')
+        )
 
 # we'll store our movies here organized by theater
 MOVIES = {}
 
+
 # we just want hours and minutes for movie times
 def time_fmt(t): return arrow.get(t).format('h:mma')
 
+
 # format the movie name and time together
-def title_and_time_fmt(n, t): 
+def title_and_time_fmt(n, t):
     return "{title}\n  {times}".format(title=title, times=times[:-2])
+
 
 # fire the tweet
 def fire(t): api.PostUpdate(t)
+
 
 # builds our tweets
 def build_tweets(theater, movies):
@@ -70,8 +78,9 @@ for movie in data:
             good_theater = True
 
     # if we didn't see any theaters we care about, peace out
-    if not good_theater: continue
-        
+    if not good_theater:
+        continue
+
     # get the theater name
     theater = showtimes[0]['theatre']['name']
 
